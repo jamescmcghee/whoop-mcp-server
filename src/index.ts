@@ -364,6 +364,23 @@ async function main(): Promise<void> {
 			res.json({ status: 'ok', authenticated: Boolean(db.getTokens()) });
 		});
 
+		app.get('/.well-known/oauth-protected-resource', (_req: Request, res: Response) => {
+			res.json({
+				resource: `https://${req.headers.host}`,
+				authorization_servers: [`https://${req.headers.host}`],
+			});
+		});
+
+		app.get('/.well-known/oauth-authorization-server', (_req: Request, res: Response) => {
+			res.json({
+				issuer: `https://${req.headers.host}`,
+				authorization_endpoint: `https://${req.headers.host}/oauth/authorize`,
+				token_endpoint: `https://${req.headers.host}/oauth/token`,
+				response_types_supported: ['code'],
+				grant_types_supported: ['authorization_code'],
+			});
+		});
+
 		app.all('/mcp', async (req: Request, res: Response) => {
 			const sessionId = req.headers['mcp-session-id'] as string | undefined;
 
