@@ -364,14 +364,14 @@ async function main(): Promise<void> {
 			res.json({ status: 'ok', authenticated: Boolean(db.getTokens()) });
 		});
 
-		app.get('/.well-known/oauth-protected-resource', (_req: Request, res: Response) => {
+		app.get('/.well-known/oauth-protected-resource', (req: Request, res: Response) => {
 			res.json({
 				resource: `https://${req.headers.host}`,
 				authorization_servers: [`https://${req.headers.host}`],
 			});
 		});
 
-		app.get('/.well-known/oauth-authorization-server', (_req: Request, res: Response) => {
+		app.get('/.well-known/oauth-authorization-server', (req: Request, res: Response) => {
 			res.json({
 				issuer: `https://${req.headers.host}`,
 				authorization_endpoint: `https://${req.headers.host}/oauth/authorize`,
