@@ -342,6 +342,7 @@ async function main(): Promise<void> {
 	} else {
 		const app = express();
 		app.use(express.json());
+		app.use((_req, res, next) => { res.setHeader('Content-Type', 'application/json'); next(); });
 
 		app.get('/callback', async (req: Request, res: Response) => {
 			const code = req.query.code as string | undefined;
