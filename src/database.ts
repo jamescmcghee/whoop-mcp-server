@@ -47,6 +47,66 @@ interface StrainTrendRow {
 	calories: number;
 }
 
+export interface OAuthClientRecord {
+	client_id: string;
+	client_secret: string | null;
+	redirect_uris: string[];
+	grant_types: string[];
+	response_types: string[];
+	token_endpoint_auth_method: string;
+	client_name: string | null;
+	created_at?: string;
+}
+
+interface OAuthClientRow {
+	client_id: string;
+	client_secret: string | null;
+	redirect_uris: string;
+	grant_types: string;
+	response_types: string;
+	token_endpoint_auth_method: string;
+	client_name: string | null;
+	created_at: string;
+}
+
+export interface OAuthCodeRecord {
+	code: string;
+	client_id: string;
+	redirect_uri: string;
+	code_challenge: string | null;
+	code_challenge_method: string | null;
+	scope: string | null;
+	expires_at: number;
+	created_at?: string;
+}
+
+interface OAuthCodeRow {
+	code: string;
+	client_id: string;
+	redirect_uri: string;
+	code_challenge: string | null;
+	code_challenge_method: string | null;
+	scope: string | null;
+	expires_at: number;
+	created_at: string;
+}
+
+export interface OAuthTokenRecord {
+	access_token: string;
+	client_id: string;
+	scope: string | null;
+	expires_at: number;
+	created_at?: string;
+}
+
+interface OAuthTokenRow {
+	access_token: string;
+	client_id: string;
+	scope: string | null;
+	expires_at: number;
+	created_at: string;
+}
+
 export class WhoopDatabase {
 	private db: Database.Database;
 
@@ -143,13 +203,57 @@ export class WhoopDatabase {
 				synced_at TEXT DEFAULT CURRENT_TIMESTAMP
 			);
 
+			CREATE TABLE IF NOT EXISTS oauth_clients (
+				client_id TEXT PRIMARY KEY,
+				client_secret TEXT,
+				redirect_uris TEXT NOT NULL,
+				grant_types TEXT NOT NULL,
+				response_types TEXT NOT NULL,
+				token_endpoint_auth_method TEXT NOT NULL,
+				client_name TEXT,
+				created_at TEXT DEFAULT CURRENT_TIMESTAMP
+			);
+
+			CREATE TABLE IF NOT EXISTS oauth_codes (
+				code TEXT PRIMARY KEY,
+				client_id TEXT NOT NULL,
+				redirect_uri TEXT NOT NULL,
+				code_challenge TEXT,
+				code_challenge_method TEXT,
+				scope TEXT,
+				expires_at INTEGER NOT NULL,
+				created_at TEXT DEFAULT CURRENT_TIMESTAMP
+			);
+
+			CREATE TABLE IF NOT EXISTS oauth_tokens (
+				access_token TEXT PRIMARY KEY,
+				client_id TEXT NOT NULL,
+				scope TEXT,
+				expires_at INTEGER NOT NULL,
+				created_at TEXT DEFAULT CURRENT_TIMESTAMP
+			);
+
 			CREATE INDEX IF NOT EXISTS idx_cycles_start ON cycles(start_time);
 			CREATE INDEX IF NOT EXISTS idx_recovery_created ON recovery(created_at);
 			CREATE INDEX IF NOT EXISTS idx_sleep_start ON sleep(start_time);
 			CREATE INDEX IF NOT EXISTS idx_workouts_start ON workouts(start_time);
 
+			CREATE INDEX IF NOT EXISTS idx_oauth_codes_client_id ON oauth_codes(client_id);
+			CREATE INDEX IF NOT EXISTS idx_oauth_codes_expires_at ON oauth_codes(expires_at);
+			CREATE INDEX IF NOT EXISTS idx_oauth_tokens_client_id ON oauth_tokens(client_id);
+			CREATE INDEX IF NOT EXISTS idx_oauth_tokens_expires_at ON oauth_tokens(expires_at);
+
 			INSERT OR IGNORE INTO sync_state (id) VALUES (1);
 		`);
+	}
+
+	private parseJsonArray(value: string): string[] {
+		try {
+			const parsed = JSON.parse(value);
+			return Array.isArray(parsed) ? parsed.map(item => String(item)) : [];
+		} catch {
+			return [];
+		}
 	}
 
 	saveTokens(tokens: WhoopTokens): void {
@@ -179,6 +283,10 @@ export class WhoopDatabase {
 			refresh_token: refreshToken,
 			expires_at: row.expires_at,
 		};
+	}
+
+	clearTokens(): void {
+		this.db.prepare('DELETE FROM tokens WHERE id = 1').run();
 	}
 
 	getSyncState(): { lastSyncAt: string | null; oldestDate: string | null; newestDate: string | null } {
@@ -359,6 +467,7 @@ export class WhoopDatabase {
 		const query = includeNaps
 			? 'SELECT * FROM sleep WHERE start_time >= ? AND start_time <= ? ORDER BY start_time DESC'
 			: 'SELECT * FROM sleep WHERE start_time >= ? AND start_time <= ? AND is_nap = 0 ORDER BY start_time DESC';
+
 		return this.db.prepare(query).all(startDate, endDate) as DbSleep[];
 	}
 
@@ -395,6 +504,133 @@ export class WhoopDatabase {
 			WHERE strain IS NOT NULL AND start_time >= DATE('now', '-' || ? || ' days')
 			ORDER BY start_time DESC
 		`).all(days) as StrainTrendRow[];
+	}
+
+	saveOAuthClient(client: OAuthClientRecord): void {
+		this.db.prepare(`
+			INSERT OR REPLACE INTO oauth_clients (
+				client_id,
+				client_secret,
+				redirect_uris,
+				grant_types,
+				response_types,
+				token_endpoint_auth_method,
+				client_name
+			) VALUES (?, ?, ?, ?, ?, ?, ?)
+		`).run(
+			client.client_id,
+			client.client_secret,
+			JSON.stringify(client.redirect_uris),
+			JSON.stringify(client.grant_types),
+			JSON.stringify(client.response_types),
+			client.token_endpoint_auth_method,
+			client.client_name
+		);
+	}
+
+	getOAuthClient(clientId: string): OAuthClientRecord | null {
+		const row = this.db.prepare(`
+			SELECT * FROM oauth_clients WHERE client_id = ?
+		`).get(clientId) as OAuthClientRow | undefined;
+
+		if (!row) return null;
+
+		return {
+			client_id: row.client_id,
+			client_secret: row.client_secret,
+			redirect_uris: this.parseJsonArray(row.redirect_uris),
+			grant_types: this.parseJsonArray(row.grant_types),
+			response_types: this.parseJsonArray(row.response_types),
+			token_endpoint_auth_method: row.token_endpoint_auth_method,
+			client_name: row.client_name,
+			created_at: row.created_at,
+		};
+	}
+
+	saveOAuthCode(code: OAuthCodeRecord): void {
+		this.db.prepare(`
+			INSERT OR REPLACE INTO oauth_codes (
+				code,
+				client_id,
+				redirect_uri,
+				code_challenge,
+				code_challenge_method,
+				scope,
+				expires_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?)
+		`).run(
+			code.code,
+			code.client_id,
+			code.redirect_uri,
+			code.code_challenge,
+			code.code_challenge_method,
+			code.scope,
+			code.expires_at
+		);
+	}
+
+	getOAuthCode(code: string): OAuthCodeRecord | null {
+		const row = this.db.prepare(`
+			SELECT * FROM oauth_codes WHERE code = ?
+		`).get(code) as OAuthCodeRow | undefined;
+
+		if (!row) return null;
+
+		return {
+			code: row.code,
+			client_id: row.client_id,
+			redirect_uri: row.redirect_uri,
+			code_challenge: row.code_challenge,
+			code_challenge_method: row.code_challenge_method,
+			scope: row.scope,
+			expires_at: row.expires_at,
+			created_at: row.created_at,
+		};
+	}
+
+	deleteOAuthCode(code: string): void {
+		this.db.prepare('DELETE FROM oauth_codes WHERE code = ?').run(code);
+	}
+
+	saveOAuthAccessToken(token: OAuthTokenRecord): void {
+		this.db.prepare(`
+			INSERT OR REPLACE INTO oauth_tokens (
+				access_token,
+				client_id,
+				scope,
+				expires_at
+			) VALUES (?, ?, ?, ?)
+		`).run(
+			token.access_token,
+			token.client_id,
+			token.scope,
+			token.expires_at
+		);
+	}
+
+	getOAuthAccessToken(accessToken: string): OAuthTokenRecord | null {
+		const row = this.db.prepare(`
+			SELECT * FROM oauth_tokens WHERE access_token = ?
+		`).get(accessToken) as OAuthTokenRow | undefined;
+
+		if (!row) return null;
+
+		return {
+			access_token: row.access_token,
+			client_id: row.client_id,
+			scope: row.scope,
+			expires_at: row.expires_at,
+			created_at: row.created_at,
+		};
+	}
+
+	deleteOAuthAccessToken(accessToken: string): void {
+		this.db.prepare('DELETE FROM oauth_tokens WHERE access_token = ?').run(accessToken);
+	}
+
+	deleteExpiredOAuthState(): void {
+		this.db.prepare('DELETE FROM oauth_codes WHERE expires_at < ?').run(Date.now());
+		this.db.prepare('DELETE FROM oauth_tokens WHERE expires_at < ?').run(Date.now());
 	}
 
 	close(): void {
