@@ -6,3 +6,5 @@ dist/
 .env
 .env.local
 .DS_Store
+uploads/progress-photos/*
+!uploads/progress-photos/.gitkeep

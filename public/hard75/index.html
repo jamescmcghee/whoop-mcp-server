@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>75 Hard Tracker</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+
+<div class="topbar">
+  <h1>75 Hard</h1>
+  <span class="badge-streak" id="streak-badge">🔥 0 day streak</span>
+</div>
+
+<!-- Setup screen (shown if challenge not started) -->
+<div id="setup-screen" class="setup-screen hidden">
+  <div style="font-size:60px;margin-bottom:16px">💪</div>
+  <h2>Start Your Challenge</h2>
+  <p>Set your start date to begin tracking your 75 Hard journey.</p>
+  <label class="field-label">Challenge Start Date</label>
+  <input type="date" id="start-date-input" class="input-field" />
+  <button class="btn-primary" onclick="startChallenge()">Begin 75 Hard</button>
+</div>
+
+<!-- Main dashboard (shown when challenge started) -->
+<div id="main-dashboard" class="hidden">
+  <div class="day-counter-wrap">
+    <div class="day-ring" id="day-ring">
+      <span class="day-num" id="day-num">1</span>
+      <span class="day-label">of 75</span>
+    </div>
+    <div class="day-sub" id="day-sub">Today's tasks</div>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="prog-label">
+      <span>Progress</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="prog-bg"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="container">
+
+    <!-- Diet card -->
+    <div class="card" id="card-diet">
+      <div class="card-header">
+        <div class="card-icon">🥗</div>
+        <div>
+          <div class="card-title">Diet</div>
+          <div class="card-subtitle">No cheat meals · No alcohol</div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <label for="diet-followed">Followed my diet today</label>
+        <label class="toggle"><input type="checkbox" id="diet-followed" /><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <label for="no-alcohol">No alcohol</label>
+        <label class="toggle"><input type="checkbox" id="no-alcohol" /><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <!-- Workout 1 card -->
+    <div class="card" id="card-w1">
+      <div class="card-header">
+        <div class="card-icon">🏋️</div>
+        <div>
+          <div class="card-title">Workout 1</div>
+          <div class="card-subtitle">45+ minutes · Can be indoor</div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <label for="w1-done">Completed</label>
+        <label class="toggle"><input type="checkbox" id="w1-done" /><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <label for="w1-outdoor">Outdoor workout</label>
+        <label class="toggle"><input type="checkbox" id="w1-outdoor" /><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <label for="w1-duration">Duration (minutes)</label>
+        <input type="number" id="w1-duration" class="num-input" min="0" max="300" value="45" />
+      </div>
+    </div>
+
+    <!-- Workout 2 card -->
+    <div class="card" id="card-w2">
+      <div class="card-header">
+        <div class="card-icon">🏃</div>
+        <div>
+          <div class="card-title">Workout 2</div>
+          <div class="card-subtitle">45+ minutes · Must be outdoor</div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <label for="w2-done">Completed</label>
+        <label class="toggle"><input type="checkbox" id="w2-done" /><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <label for="w2-outdoor">Outdoor workout</label>
+        <label class="toggle"><input type="checkbox" id="w2-outdoor" /><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <label for="w2-duration">Duration (minutes)</label>
+        <input type="number" id="w2-duration" class="num-input" min="0" max="300" value="45" />
+      </div>
+    </div>
+
+    <!-- Water card -->
+    <div class="card" id="card-water">
+      <div class="card-header">
+        <div class="card-icon">💧</div>
+        <div>
+          <div class="card-title">Water</div>
+          <div class="card-subtitle">1 gallon (128 oz) per day</div>
+        </div>
+      </div>
+      <div style="padding-top:8px">
+        <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
+          <span class="water-val" id="water-val">0</span>
+          <span style="font-size:13px;color:var(--text-muted)">oz / 128 oz</span>
+        </div>
+        <input type="range" id="water-slider" class="water-slider" min="0" max="160" step="4" value="0" />
+        <div class="water-row">
+          <span>0</span>
+          <span style="color:var(--primary);font-weight:600">Goal: 128 oz</span>
+          <span>160 oz</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reading card -->
+    <div class="card" id="card-reading">
+      <div class="card-header">
+        <div class="card-icon">📖</div>
+        <div>
+          <div class="card-title">Reading</div>
+          <div class="card-subtitle">10 pages of non-fiction</div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <label>Read 10 pages today</label>
+        <span id="reading-status" style="font-size:13px;color:var(--text-muted)">Not done</span>
+      </div>
+      <a href="/reading.html" class="btn-primary" style="display:block;text-align:center;text-decoration:none;padding:10px;margin-top:12px;border-radius:10px;font-size:14px">
+        Open Reading →
+      </a>
+    </div>
+
+    <!-- Photo card -->
+    <div class="card" id="card-photo">
+      <div class="card-header">
+        <div class="card-icon">📸</div>
+        <div>
+          <div class="card-title">Progress Photo</div>
+          <div class="card-subtitle">Daily progress picture</div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <label>Photo taken today</label>
+        <span id="photo-status" style="font-size:13px;color:var(--text-muted)">Not done</span>
+      </div>
+      <a href="/photos.html" class="btn-primary" style="display:block;text-align:center;text-decoration:none;padding:10px;margin-top:12px;border-radius:10px;font-size:14px">
+        Upload Photo →
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast">Saved</div>
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <a href="/index.html" class="nav-item active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </a>
+  <a href="/food.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+    Food
+  </a>
+  <a href="/reading.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+    Reading
+  </a>
+  <a href="/photos.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    Photos
+  </a>
+</nav>
+
+<script src="/js/dashboard.js"></script>
+</body>
+</html>
