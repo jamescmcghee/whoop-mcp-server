@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Progress Photos — 75 Hard</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Progress Photos</h1>
+  <span id="photo-count" style="font-size:13px;color:var(--text-muted)">0 photos</span>
+</div>
+
+<div class="container mt-2">
+
+  <!-- Upload area -->
+  <div class="photo-upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+    <div class="upload-icon">📸</div>
+    <p>Tap to upload a progress photo<br/><span style="font-size:12px">or drag &amp; drop here</span></p>
+    <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none" onchange="uploadPhoto(event)" />
+  </div>
+
+  <div id="upload-progress" class="hidden" style="margin-bottom:16px">
+    <div class="prog-bg"><div class="prog-fill" id="upload-bar" style="width:0%"></div></div>
+    <p class="text-center text-muted mt-1" style="font-size:13px">Uploading...</p>
+  </div>
+
+  <div id="notes-form" class="card hidden" style="margin-bottom:12px">
+    <label class="field-label">Notes (optional)</label>
+    <input type="text" id="photo-notes" class="input-field" placeholder="e.g. Week 3 check-in" />
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn-primary" style="flex:1" onclick="confirmUpload()">Upload</button>
+      <button onclick="cancelUpload()" style="flex:1;background:var(--bg-card2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:12px;cursor:pointer">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Photo gallery -->
+  <div id="empty-state" class="text-center text-muted" style="padding:40px 0">
+    <div style="font-size:48px;margin-bottom:12px">📷</div>
+    <p>No photos yet. Upload your first progress photo!</p>
+  </div>
+
+  <div id="photo-grid" class="photo-grid hidden"></div>
+
+</div>
+
+<!-- Full size photo modal -->
+<div class="modal-overlay" id="photo-modal" onclick="closeModal()">
+  <button class="modal-close" onclick="closeModal()">✕</button>
+  <img class="modal-img" id="modal-img" src="" alt="Progress photo" />
+</div>
+
+<div class="toast" id="toast"></div>
+
+<nav class="bottom-nav">
+  <a href="/index.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </a>
+  <a href="/food.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+    Food
+  </a>
+  <a href="/reading.html" class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+    Reading
+  </a>
+  <a href="/photos.html" class="nav-item active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    Photos
+  </a>
+</nav>
+
+<script src="/js/photos.js"></script>
+</body>
+</html>
